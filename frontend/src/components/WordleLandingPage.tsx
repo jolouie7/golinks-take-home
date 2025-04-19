@@ -1,7 +1,11 @@
 import React from "react";
 import { format } from "date-fns";
 
-function WordleLandingPage() {
+interface WordleLandingPageProps {
+  onPlayClick: () => void;
+}
+
+function WordleLandingPage({ onPlayClick }: WordleLandingPageProps) {
   const today = new Date();
   const formattedDate = format(today, "MMMM d, yyyy");
 
@@ -41,7 +45,10 @@ function WordleLandingPage() {
         <button className="border-2 border-gray-300 rounded-full py-3 px-12 text-base font-medium hover:bg-gray-100 transition">
           Log in
         </button>
-        <button className="bg-black text-white rounded-full py-3 px-12 text-base font-medium hover:bg-gray-800 transition">
+        <button
+          onClick={onPlayClick}
+          className="bg-black text-white rounded-full py-3 px-12 text-base font-medium hover:bg-gray-800 transition"
+        >
           Play
         </button>
       </div>
