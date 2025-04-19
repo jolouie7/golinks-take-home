@@ -1,29 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
+import { HowToPlayModal } from "@/components/HowToPlayModal";
+import { ArrowLeft } from "lucide-react";
 
 interface WordleGameBoardProps {
   onBackToHome: () => void;
 }
 
 function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
+  const [showHowToPlay, setShowHowToPlay] = useState(true);
+
+  const handleCloseModal = () => {
+    setShowHowToPlay(false);
+  };
+
+  const handleOpenHowToPlay = () => {
+    setShowHowToPlay(true);
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen w-full bg-[#121213] text-white">
+      {/* How To Play Modal */}
+      <HowToPlayModal isOpen={showHowToPlay} onClose={handleCloseModal} />
+
       {/* Header */}
       <header className="w-full border-b border-gray-700 p-3 flex justify-between items-center">
-        <button onClick={onBackToHome} className="text-white p-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
+        <button onClick={onBackToHome} className="p-2">
+          <ArrowLeft />
         </button>
         <div className="flex space-x-3">
           <button className="text-white p-2">
@@ -72,7 +74,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
               <line x1="17" y1="16" x2="23" y2="16"></line>
             </svg>
           </button>
-          <button className="text-white p-2">
+          <button onClick={handleOpenHowToPlay} className="text-white p-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -161,11 +163,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
           </button>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="w-full text-xs text-gray-500 py-2 text-center border-t border-gray-700">
-        © 2025 Joseph Louie
-      </footer>
     </div>
   );
 }
