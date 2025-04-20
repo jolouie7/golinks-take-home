@@ -1,5 +1,6 @@
 import React from "react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 interface WordleLandingPageProps {
   onPlayClick: () => void;
@@ -45,12 +46,14 @@ function WordleLandingPage({ onPlayClick }: WordleLandingPageProps) {
         <button className="border-2 border-gray-300 rounded-full py-3 px-12 text-base font-medium hover:bg-gray-100 transition">
           Log in
         </button>
-        <button
-          onClick={onPlayClick}
-          className="bg-black text-white rounded-full py-3 px-12 text-base font-medium hover:bg-gray-800 transition"
-        >
-          Play
-        </button>
+        <Link to="/game">
+          <button
+            onClick={onPlayClick}
+            className="bg-black text-white rounded-full py-3 px-12 text-base font-medium hover:bg-gray-800 transition"
+          >
+            Play
+          </button>
+        </Link>
       </div>
 
       {/* Date */}

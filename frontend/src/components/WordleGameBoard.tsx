@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { HowToPlayModal } from "@/components/HowToPlayModal";
+import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { HowToPlayModal } from "@/components/HowToPlayModal";
 
 interface WordleGameBoardProps {
   onBackToHome: () => void;
@@ -24,9 +25,11 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
       {/* Header */}
       <header className="w-full border-b border-gray-700 p-3 flex justify-between items-center">
-        <button onClick={onBackToHome} className="p-2">
-          <ArrowLeft />
-        </button>
+        <Link to="/">
+          <button onClick={onBackToHome} className="p-2">
+            <ArrowLeft />
+          </button>
+        </Link>
         <div className="flex space-x-3">
           <button className="text-white p-2">
             <svg
