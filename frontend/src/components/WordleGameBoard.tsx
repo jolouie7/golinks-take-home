@@ -4,30 +4,21 @@ import { ArrowLeft, Delete } from "lucide-react";
 import { HowToPlayModal } from "@/components/HowToPlayModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
+import { wordList } from "@/wordleWordList";
 interface WordleGameBoardProps {
   onBackToHome: () => void;
 }
-
-const wordList = new Set([
-  "HELLO",
-  "WORLD",
-  "REACT",
-  "GAMES",
-  "CODER",
-  "PIXEL",
-  "SWIFT",
-  "BYTES",
-  "LOGIC",
-  "QUERY",
-]);
 
 function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
   const [wordsTried, setWordsTried] = useState<string[]>(Array(6).fill(""));
   const [currentWord, setCurrentWord] = useState<string[]>([]);
   const [currentRow, setCurrentRow] = useState(0);
-  const [secretWord, setSecretWord] = useState("HELLO");
+  const [secretWord, setSecretWord] = useState("INBOX");
+  const [letterStatus, setLetterStatus] = useState<{
+    [key: string]: "correct" | "present" | "absent";
+  }>({});
+  const [isGameOver, setIsGameOver] = useState(false);
 
   const handleCloseModal = () => {
     setShowHowToPlay(false);
@@ -86,6 +77,21 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
       const newWordsTried = [...wordsTried];
       newWordsTried[currentRow] = currentWord.join("");
+
+      // Go through each letter in currentWord update letterStatus
+      const newLetterStatus = { ...letterStatus };
+      currentWord.forEach((letter, index) => {
+        const status = getLetterStatus(letter, index);
+        if (
+          !letterStatus[letter] ||
+          (letterStatus[letter] === "absent" && status !== "absent") || // i don't think a letter ever goes from absent to present or correct
+          (letterStatus[letter] === "present" && status === "correct")
+        ) {
+          newLetterStatus[letter] = status;
+        }
+      });
+
+      setLetterStatus(newLetterStatus);
       setWordsTried(newWordsTried);
       setCurrentRow(currentRow + 1);
       setCurrentWord([]);
@@ -164,7 +170,15 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
             (letter, idx) => (
               <button
                 key={idx}
-                className="w-8 h-10 md:w-10 md:h-14 bg-gray-500 text-white font-bold rounded m-0.5 flex items-center justify-center"
+                className={cn(
+                  "w-8 h-10 md:w-10 md:h-14 bg-gray-500 text-white font-bold rounded m-0.5 flex items-center justify-center",
+                  letterStatus[letter] === "correct" &&
+                    "bg-green-700 border-green-700",
+                  letterStatus[letter] === "present" &&
+                    "bg-yellow-700 border-yellow-700",
+                  letterStatus[letter] === "absent" &&
+                    "bg-gray-700 border-gray-700"
+                )}
                 onClick={() => handleLetterClick(letter)}
               >
                 {letter}
@@ -176,7 +190,15 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
           {["A", "S", "D", "F", "G", "H", "J", "K", "L"].map((letter, idx) => (
             <button
               key={idx}
-              className="w-8 h-10 md:w-10 md:h-14 bg-gray-500 text-white font-bold rounded m-0.5 flex items-center justify-center"
+              className={cn(
+                "w-8 h-10 md:w-10 md:h-14 bg-gray-500 text-white font-bold rounded m-0.5 flex items-center justify-center",
+                letterStatus[letter] === "correct" &&
+                  "bg-green-700 border-green-700",
+                letterStatus[letter] === "present" &&
+                  "bg-yellow-700 border-yellow-700",
+                letterStatus[letter] === "absent" &&
+                  "bg-gray-700 border-gray-700"
+              )}
               onClick={() => handleLetterClick(letter)}
             >
               {letter}
@@ -193,7 +215,15 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
           {["Z", "X", "C", "V", "B", "N", "M"].map((letter, idx) => (
             <button
               key={idx}
-              className="w-8 h-10 md:w-10 md:h-14 bg-gray-500 text-white font-bold rounded m-0.5 flex items-center justify-center"
+              className={cn(
+                "w-8 h-10 md:w-10 md:h-14 bg-gray-500 text-white font-bold rounded m-0.5 flex items-center justify-center",
+                letterStatus[letter] === "correct" &&
+                  "bg-green-700 border-green-700",
+                letterStatus[letter] === "present" &&
+                  "bg-yellow-700 border-yellow-700",
+                letterStatus[letter] === "absent" &&
+                  "bg-gray-700 border-gray-700"
+              )}
               onClick={() => handleLetterClick(letter)}
             >
               {letter}
