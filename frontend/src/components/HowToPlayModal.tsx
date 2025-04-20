@@ -16,8 +16,8 @@ function LetterTile({ letter, status }: LetterTileProps) {
     <div
       className={cn(
         "flex h-12 w-12 items-center justify-center border-2 text-2xl font-bold",
-        status === "correct" && "bg-green-500 text-white border-green-500",
-        status === "present" && "bg-yellow-500 text-white border-yellow-500",
+        status === "correct" && "bg-green-700 text-white border-green-700",
+        status === "present" && "bg-yellow-700 text-white border-yellow-700",
         status === "absent" && "bg-gray-700 text-white border-gray-700"
       )}
     >
