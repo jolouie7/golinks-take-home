@@ -12,7 +12,10 @@ const app = express();
 const port = process.env.PORT || 8000;
 
 // CORS Configuration
-const allowedOrigins = "*";
+const allowedOrigins = [
+  "https://golinks-take-home.vercel.app",
+  "http://localhost:5173",
+];
 
 const corsOptions: cors.CorsOptions = {
   origin: allowedOrigins,
