@@ -19,10 +19,19 @@ export const createGameSession = async (secretWord: string) => {
 
 export const getGameSession = async () => {
   try {
+    console.log("Attempting to get 'gameSession' from Redis...");
     const gameSession = await redisClient.get("gameSession");
+    console.log(
+      `Redis returned for 'gameSession': ${
+        typeof gameSession === "string"
+          ? gameSession.substring(0, 50) + "..."
+          : gameSession
+      }`
+    );
     return gameSession;
   } catch (error) {
-    console.error("Error retrieving game session:", error);
+    console.error("Error retrieving game session from Redis:", error);
+    return null;
   }
 };
 
