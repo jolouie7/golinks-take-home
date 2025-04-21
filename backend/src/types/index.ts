@@ -4,4 +4,11 @@ export interface AppError extends Error {
   status: string;
 }
 
-// You can add more types as needed for your specific application
+export interface GameSession {
+  id: string;
+  secretWord: string;
+  wordsTried: string[];
+  currentRow: number;
+  isGameOver: boolean;
+  createdAt: Date;
+}

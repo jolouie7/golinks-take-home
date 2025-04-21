@@ -1,6 +1,11 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import { Request, Response } from "express";
 import cors from "cors";
-import { getSecretWord } from "./services/WordService";
+import { getSecretWord, isValidWord } from "./services/WordService";
+import {
+  createGameSession,
+  getGameSession,
+} from "./services/GameSessionService";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -15,14 +20,31 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // New game
-app.get("/api/new", async (req, res) => {
+app.get("/api/new", async (req: Request, res: Response) => {
   const secretWord = await getSecretWord();
   res.json({ secretWord });
 });
 
+// Get game session
+app.get("/api/game-session", async (req: Request, res: Response) => {
+  const gameSessionString = await getGameSession();
+  if (!gameSessionString) {
+    return res.status(404).json({ error: "Game session not found" });
+  }
+
+  try {
+    const gameSession = JSON.parse(gameSessionString);
+    res.json(gameSession);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to parse game session" });
+  }
+});
+
 // Guess word
-app.post("/api/guess", (req, res) => {
-  console.log("Guess word");
+app.post("/api/guess", async (req: Request, res: Response) => {
+  const { word } = req.body;
+  const isValid = await isValidWord(word);
+  res.json({ isValid });
 });
 
 // Start server
