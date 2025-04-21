@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { getSecretWord } from "./services/WordService";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -14,8 +15,9 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // New game
-app.get("/api/new", (req, res) => {
-  console.log("New game");
+app.get("/api/new", async (req, res) => {
+  const secretWord = await getSecretWord();
+  res.json({ secretWord });
 });
 
 // Guess word
