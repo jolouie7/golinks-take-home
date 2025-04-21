@@ -23,9 +23,9 @@ redisClient.on("ready", () => {
   console.log("Redis client is ready.");
 });
 
-redisClient.on("error", (error) => {
+redisClient.on("error", (error: any) => {
   console.error("Redis connection error:", error);
-  // Depending on the error, you might want to exit or implement retry logic
+  throw new Error("Failed to connect to Redis");
 });
 
 redisClient.on("end", () => {
