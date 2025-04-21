@@ -4,30 +4,90 @@ import { ArrowLeft, Delete } from "lucide-react";
 import { HowToPlayModal } from "@/components/HowToPlayModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { wordList } from "@/wordleWordList";
+
 interface WordleGameBoardProps {
   onBackToHome: () => void;
 }
+
+// const gameSession = {
+//   id: "fa40f038-90ce-44c7-b3ec-2213ef4f51e8",
+//   secretWord: "INBOX",
+//   wordsTried: ["INPUT", "PILOT", "", "", "", ""],
+//   currentRow: 2,
+//   isGameOver: false,
+//   // createdAt: new Date(),
+// };
 
 function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
   const [wordsTried, setWordsTried] = useState<string[]>(Array(6).fill(""));
   const [currentWord, setCurrentWord] = useState<string[]>([]);
   const [currentRow, setCurrentRow] = useState(0);
-  const [secretWord, setSecretWord] = useState("INBOX");
+  const [secretWord, setSecretWord] = useState("");
   const [letterStatus, setLetterStatus] = useState<{
     [key: string]: "correct" | "present" | "absent";
   }>({});
   const [isGameOver, setIsGameOver] = useState(false);
 
+  // TODO: BUG: When i load gameSession the keyboard doesn't show highlighted letters.
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const getGameSession = async () => {
+      /*
+      1a. check localstorage for game session, if there is a game session then get that game session
+      1b. if there is no game session then make an api call to get new game session
+      2. make an api call to get the game session and store in component state
+      returns:
+      {
+    "id": "4c78bb55-a9bd-46f0-897a-639d47712469",
+    "secretWord": "INBOX",
+    "wordsTried": [
+        "INPUT",
+        "PILOT",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "currentRow": 2,
+    "isGameOver": false,
+    "createdAt": "2025-04-21T07:07:21.977Z"
+}
+
+      3. once the state is loaded the board and keyboard should be rendered correctly
+      */
+
+      const gameSession = await fetch("http://localhost:8000/api/game-session");
+
+      if (!gameSession) {
+        const newGameSession = await fetch(
+          "http://localhost:8000/api/new-game-session"
+        );
+        const newGameSessionData = await newGameSession.json();
+        setSecretWord(newGameSessionData.secretWord);
+        setWordsTried(newGameSessionData.wordsTried);
+        setCurrentRow(newGameSessionData.currentRow);
+        setIsGameOver(newGameSessionData.isGameOver);
+      }
+
+      const gameSessionData = await gameSession.json();
+
+      setSecretWord(gameSessionData.secretWord);
+      setWordsTried(gameSessionData.wordsTried);
+      setCurrentRow(gameSessionData.currentRow);
+      setIsGameOver(gameSessionData.isGameOver);
+    };
+
+    getGameSession();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = async (event: KeyboardEvent) => {
       if (isGameOver) return;
 
       const key = event.key.toUpperCase();
 
       if (key === "ENTER") {
-        handleSubmit();
+        await handleSubmit();
       } else if (key === "BACKSPACE" || key === "DELETE") {
         handleDelete();
       } else if (/^[A-Z]$/.test(key) && currentWord.length < 5) {
@@ -40,7 +100,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentWord]);
+  }, [currentWord, isGameOver]);
 
   const handleCloseModal = () => {
     setShowHowToPlay(false);
@@ -84,49 +144,72 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     return "absent";
   };
 
-  const isValidWord = (word: string) => {
-    return wordList.has(word);
+  const isValidWord = async (word: string): Promise<boolean> => {
+    // TODO: FIX: using template literal to get the REACT_APP_API_URL didn't work. gives process error
+    const response = await fetch(`http://localhost:8000/api/guess`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ word }),
+    });
+    const data = await response.json();
+    return data.isValid;
   };
 
-  const handleSubmit = () => {
-    if (currentWord.length === 5 && currentRow < 6) {
-      if (!isValidWord(currentWord.join(""))) {
-        toast.error("Not a valid word");
-        return;
-      }
-
-      if (checkIfSecretWord(currentWord.join(""))) {
-        toast.success("You win!");
+  // TODO: When clicking enter we need to save game state as a checkpoint.
+  const handleSubmit = async () => {
+    if (currentWord.length !== 5 || currentRow >= 6) {
+      if (currentRow >= 6) {
+        toast.error("You lose!");
         setIsGameOver(true);
       }
-
-      const newWordsTried = [...wordsTried];
-      newWordsTried[currentRow] = currentWord.join("");
-
-      // Go through each letter in currentWord update letterStatus
-      const newLetterStatus = { ...letterStatus };
-      currentWord.forEach((letter, index) => {
-        const status = getLetterStatus(letter, index);
-        if (
-          !letterStatus[letter] ||
-          (letterStatus[letter] === "absent" && status !== "absent") || // i don't think a letter ever goes from absent to present or correct
-          (letterStatus[letter] === "present" && status === "correct")
-        ) {
-          newLetterStatus[letter] = status;
-        }
-      });
-
-      setLetterStatus(newLetterStatus);
-      setWordsTried(newWordsTried);
-      setCurrentRow(currentRow + 1);
-      setCurrentWord([]);
-      console.log(wordsTried);
+      return;
     }
 
-    if (currentRow === 6) {
-      toast.error("You lose!");
+    const wordToCheck = currentWord.join("");
+
+    // Check if the word is valid
+    const isValid = await isValidWord(wordToCheck);
+    if (!isValid) {
+      toast.error("Not a valid word");
+      return;
+    }
+
+    // Update the words tried array first to ensure the word appears on the board
+    const newWordsTried = [...wordsTried];
+    newWordsTried[currentRow] = wordToCheck;
+    setWordsTried(newWordsTried);
+
+    // Check if the word is correct
+    if (checkIfSecretWord(wordToCheck)) {
+      // Update letter status for the winning word
+      const newLetterStatus = { ...letterStatus };
+      currentWord.forEach((letter) => {
+        newLetterStatus[letter] = "correct";
+      });
+      setLetterStatus(newLetterStatus);
+
+      toast.success("You win!");
       setIsGameOver(true);
     }
+
+    // Update letter status for keyboard
+    const newLetterStatus = { ...letterStatus };
+    currentWord.forEach((letter, index) => {
+      const status = getLetterStatus(letter, index);
+      if (
+        !letterStatus[letter] ||
+        (letterStatus[letter] === "absent" && status !== "absent") ||
+        (letterStatus[letter] === "present" && status === "correct")
+      ) {
+        newLetterStatus[letter] = status;
+      }
+    });
+
+    setLetterStatus(newLetterStatus);
+    setCurrentRow(currentRow + 1);
+    setCurrentWord([]);
   };
 
   return (
