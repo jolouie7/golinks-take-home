@@ -11,6 +11,7 @@ interface WordleGameBoardProps {
 
 function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
+  const [gameSessionId, setGameSessionId] = useState("");
   const [wordsTried, setWordsTried] = useState<string[]>(Array(6).fill(""));
   const [currentWord, setCurrentWord] = useState<string[]>([]);
   const [currentRow, setCurrentRow] = useState(0);
@@ -46,13 +47,16 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
       3. once the state is loaded the board and keyboard should be rendered correctly
       */
 
-      const gameSession = await fetch("http://localhost:8000/api/game-session");
+      const gameSession = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/game-session`
+      );
 
       if (!gameSession) {
         const newGameSession = await fetch(
-          "http://localhost:8000/api/new-game-session"
+          `${import.meta.env.VITE_API_URL}/api/new-game-session`
         );
         const newGameSessionData = await newGameSession.json();
+        setGameSessionId(newGameSessionData.id);
         setSecretWord(newGameSessionData.secretWord);
         setWordsTried(newGameSessionData.wordsTried);
         setCurrentRow(newGameSessionData.currentRow);
@@ -61,6 +65,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
       const gameSessionData = await gameSession.json();
 
+      setGameSessionId(gameSessionData.id);
       setSecretWord(gameSessionData.secretWord);
       setWordsTried(gameSessionData.wordsTried);
       setCurrentRow(gameSessionData.currentRow);
@@ -184,8 +189,13 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   };
 
   const isValidWord = async (word: string): Promise<boolean> => {
-    // TODO: FIX: using template literal to get the REACT_APP_API_URL didn't work. gives process error
-    const response = await fetch(`http://localhost:8000/api/guess`, {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.error("Error: VITE_API_URL environment variable not set.");
+      toast.error("API URL not configured. Please contact support.");
+      return false; // Indicate failure
+    }
+    const response = await fetch(`${apiUrl}/api/guess`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -196,13 +206,48 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     return data.isValid;
   };
 
-  // TODO: When clicking enter we need to save game state as a checkpoint.
+  interface GameSession {
+    id: string;
+    secretWord: string;
+    wordsTried: string[];
+    currentRow: number;
+    isGameOver: boolean;
+  }
+
+  const updateGameSession = async (newGameSession: GameSession) => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.error("Error: VITE_API_URL environment variable not set.");
+      toast.error("API URL not configured. Cannot save game.");
+      // Decide how to handle this - maybe prevent further gameplay?
+      return;
+    }
+    await fetch(`${apiUrl}/api/game-session`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ newGameSession }),
+    });
+  };
+
   const handleSubmit = async () => {
     if (currentWord.length !== 5) {
       return;
     }
 
     if (currentRow >= 6) {
+      // Update game session
+      const currentGameSession = {
+        id: gameSessionId,
+        secretWord: secretWord,
+        wordsTried: wordsTried,
+        currentRow: currentRow + 1,
+        isGameOver: true,
+      };
+
+      await updateGameSession(currentGameSession);
+
       toast.error("Game Over!");
       setIsGameOver(true);
     }
@@ -211,6 +256,17 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
     // Check if the word is correct
     if (checkIfSecretWord(wordToCheck)) {
+      // Update game session
+      const currentGameSession = {
+        id: gameSessionId,
+        secretWord: secretWord,
+        wordsTried: wordsTried,
+        currentRow: currentRow + 1,
+        isGameOver: true,
+      };
+
+      await updateGameSession(currentGameSession);
+
       // Update letter status for the winning word
       // const newLetterStatus = { ...letterStatus };
       // currentWord.forEach((letter) => {
@@ -233,6 +289,17 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     const newWordsTried = [...wordsTried];
     newWordsTried[currentRow] = wordToCheck;
     setWordsTried(newWordsTried);
+
+    // Update game session
+    const currentGameSession = {
+      id: gameSessionId,
+      secretWord: secretWord,
+      wordsTried: newWordsTried,
+      currentRow: currentRow + 1,
+      isGameOver: isGameOver,
+    };
+
+    await updateGameSession(currentGameSession);
 
     // Update letter status for keyboard
     const newLetterStatus = { ...letterStatus };
