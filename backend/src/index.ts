@@ -53,17 +53,14 @@ app.get("/api/new-game-session", async (req: Request, res: Response) => {
 app.get("/api/game-session", async (req: Request, res: Response) => {
   const gameSessionString = await getGameSession();
   if (!gameSessionString) {
-    // Send 404 if session not found in Redis
     return res.status(404).json({ error: "Game session not found" });
   }
 
   try {
-    // Parse the string from Redis before sending
     const gameSession = JSON.parse(gameSessionString);
     res.json(gameSession);
   } catch (error) {
-    console.error("Error parsing game session string:", error);
-    res.status(500).json({ error: "Failed to parse game session data" });
+    res.status(500).json({ error: "Failed to parse game session" });
   }
 });
 
@@ -84,4 +81,5 @@ app.put("api/game-session", async (req: Request, res: Response) => {
 // Start server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log(`Allowed CORS origins: ${allowedOrigins.join(", ")}`);
 });
