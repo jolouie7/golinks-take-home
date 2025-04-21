@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface LetterTileProps {
   letter: string;
-  status: "correct" | "present" | "absent";
+  status: "correct" | "present" | "absent" | "empty";
 }
 
 function LetterTile({ letter, status }: LetterTileProps) {
@@ -18,7 +18,8 @@ function LetterTile({ letter, status }: LetterTileProps) {
         "flex h-12 w-12 items-center justify-center border-2 text-2xl font-bold",
         status === "correct" && "bg-green-700 text-white border-green-700",
         status === "present" && "bg-yellow-700 text-white border-yellow-700",
-        status === "absent" && "bg-gray-700 text-white border-gray-700"
+        status === "absent" && "bg-gray-700 text-white border-gray-700",
+        status === "empty" && "bg-gray-500 text-white border-gray-500"
       )}
     >
       {letter}
@@ -56,10 +57,10 @@ export function HowToPlayModal({ isOpen, onClose }: HowToPlayModalProps) {
             <div className="space-y-2">
               <div className="flex gap-1">
                 <LetterTile letter="W" status="correct" />
-                <LetterTile letter="O" status="absent" />
-                <LetterTile letter="R" status="absent" />
-                <LetterTile letter="D" status="absent" />
-                <LetterTile letter="Y" status="absent" />
+                <LetterTile letter="O" status="empty" />
+                <LetterTile letter="R" status="empty" />
+                <LetterTile letter="D" status="empty" />
+                <LetterTile letter="Y" status="empty" />
               </div>
               <p>
                 <span className="font-bold">W</span> is in the word and in the
@@ -69,11 +70,11 @@ export function HowToPlayModal({ isOpen, onClose }: HowToPlayModalProps) {
 
             <div className="space-y-2">
               <div className="flex gap-1">
-                <LetterTile letter="L" status="absent" />
+                <LetterTile letter="L" status="empty" />
                 <LetterTile letter="I" status="present" />
-                <LetterTile letter="G" status="absent" />
-                <LetterTile letter="H" status="absent" />
-                <LetterTile letter="T" status="absent" />
+                <LetterTile letter="G" status="empty" />
+                <LetterTile letter="H" status="empty" />
+                <LetterTile letter="T" status="empty" />
               </div>
               <p>
                 <span className="font-bold">I</span> is in the word but in the
@@ -83,11 +84,11 @@ export function HowToPlayModal({ isOpen, onClose }: HowToPlayModalProps) {
 
             <div className="space-y-2">
               <div className="flex gap-1">
-                <LetterTile letter="R" status="absent" />
-                <LetterTile letter="O" status="absent" />
-                <LetterTile letter="G" status="absent" />
+                <LetterTile letter="R" status="empty" />
+                <LetterTile letter="O" status="empty" />
+                <LetterTile letter="G" status="empty" />
                 <LetterTile letter="U" status="absent" />
-                <LetterTile letter="E" status="absent" />
+                <LetterTile letter="E" status="empty" />
               </div>
               <p>
                 <span className="font-bold">U</span> is not in the word in any
