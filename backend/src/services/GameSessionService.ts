@@ -8,8 +8,8 @@ export const createGameSession = async (secretWord: string) => {
     JSON.stringify({
       id: uuidv4(),
       secretWord,
-      wordsTried: ["INPUT", "PILOT", "", "", "", ""], // replace with empty strings as default
-      currentRow: 2, // replace with 0 as default
+      wordsTried: ["", "", "", "", "", ""],
+      currentRow: 0,
       isGameOver: false,
       createdAt: new Date(),
     })
@@ -22,10 +22,16 @@ export const getGameSession = async () => {
   return gameSession;
 };
 
-// export const updateGameSession = async (gameSession: GameSession) => {
-//   const gameSession = await redisClient.set(
-//     "gameSession",
-//     JSON.stringify(gameSession)
-//   );
-//   return gameSession;
-// };
+// TODO: add validation to check incoming gameSession
+export const updateGameSession = async (newGameSession: GameSession) => {
+  const gameSession = await redisClient.set(
+    "gameSession",
+    JSON.stringify(newGameSession)
+  );
+  return gameSession;
+};
+
+export const deleteGameSession = async () => {
+  const gameSession = await redisClient.del("gameSession");
+  return gameSession;
+};
