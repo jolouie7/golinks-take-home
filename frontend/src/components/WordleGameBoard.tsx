@@ -23,30 +23,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
   useEffect(() => {
     const getGameSession = async () => {
-      /*
-      1a. check localstorage for game session, if there is a game session then get that game session
-      1b. if there is no game session then make an api call to get new game session
-      2. make an api call to get the game session and store in component state
-      returns:
-      {
-    "id": "4c78bb55-a9bd-46f0-897a-639d47712469",
-    "secretWord": "INBOX",
-    "wordsTried": [
-        "INPUT",
-        "PILOT",
-        "",
-        "",
-        "",
-        ""
-    ],
-    "currentRow": 2,
-    "isGameOver": false,
-    "createdAt": "2025-04-21T07:07:21.977Z"
-}
-
-      3. once the state is loaded the board and keyboard should be rendered correctly
-      */
-
       const gameSession = await fetch(
         `${import.meta.env.VITE_API_URL}/api/game-session`
       );
@@ -264,13 +240,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
       };
 
       await updateGameSession(currentGameSession);
-
-      // Update letter status for the winning word
-      // const newLetterStatus = { ...letterStatus };
-      // currentWord.forEach((letter) => {
-      //   newLetterStatus[letter] = "correct";
-      // });
-      // setLetterStatus(newLetterStatus);
 
       toast.success("You win!");
       setIsGameOver(true);
