@@ -1,5 +1,4 @@
 import { Route, Routes, useNavigate } from "react-router-dom";
-import "./App.css";
 import WordleLandingPage from "@/components/WordleLandingPage";
 import WordleGameBoard from "@/components/WordleGameBoard";
 
