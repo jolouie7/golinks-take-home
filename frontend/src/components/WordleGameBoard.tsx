@@ -156,14 +156,12 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     if (currentWord.length < 5) {
       setCurrentWord([...currentWord, letter]);
     }
-    console.log(currentWord);
   };
 
   const handleDelete = () => {
     if (currentWord.length > 0) {
       setCurrentWord(currentWord.slice(0, -1));
     }
-    console.log(currentWord);
   };
 
   // Helper function to check if the word is the secret word
