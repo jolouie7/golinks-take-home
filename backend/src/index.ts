@@ -21,14 +21,14 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // New game
-app.get("/api/new-game-session", async (req: Request, res: Response) => {
+app.get("api/new-game-session", async (req: Request, res: Response) => {
   const secretWord = await getSecretWord();
   const newGameSession = await createGameSession(secretWord);
   res.json({ newGameSession });
 });
 
 // Get current game session
-app.get("/api/game-session", async (req: Request, res: Response) => {
+app.get("api/game-session", async (req: Request, res: Response) => {
   const gameSessionString = await getGameSession();
   if (!gameSessionString) {
     return res.status(404).json({ error: "Game session not found" });
@@ -43,14 +43,14 @@ app.get("/api/game-session", async (req: Request, res: Response) => {
 });
 
 // Guess word
-app.post("/api/guess", async (req: Request, res: Response) => {
+app.post("api/guess", async (req: Request, res: Response) => {
   const { word } = req.body;
   const isValid = await isValidWord(word);
   res.json({ isValid });
 });
 
 // Update game session
-app.put("/api/game-session", async (req: Request, res: Response) => {
+app.put("api/game-session", async (req: Request, res: Response) => {
   const { newGameSession } = req.body;
   await updateGameSession(newGameSession);
   res.json({ message: "Game session updated" });
