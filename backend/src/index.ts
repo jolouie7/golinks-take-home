@@ -14,6 +14,7 @@ const port = process.env.PORT || 8000;
 // CORS Configuration
 const allowedOrigins = [
   "https://golinks-take-home.vercel.app",
+  "https://golinks-take-home.vercel.app/game",
   "http://localhost:5173",
 ];
 
@@ -52,14 +53,17 @@ app.get("/api/new-game-session", async (req: Request, res: Response) => {
 app.get("/api/game-session", async (req: Request, res: Response) => {
   const gameSessionString = await getGameSession();
   if (!gameSessionString) {
+    // Send 404 if session not found in Redis
     return res.status(404).json({ error: "Game session not found" });
   }
 
   try {
+    // Parse the string from Redis before sending
     const gameSession = JSON.parse(gameSessionString);
     res.json(gameSession);
   } catch (error) {
-    res.status(500).json({ error: "Failed to parse game session" });
+    console.error("Error parsing game session string:", error);
+    res.status(500).json({ error: "Failed to parse game session data" });
   }
 });
 
