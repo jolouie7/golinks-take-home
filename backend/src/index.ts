@@ -3,8 +3,9 @@ import { Request, Response } from "express";
 import cors from "cors";
 import { getSecretWord, isValidWord } from "./services/WordService";
 import {
-  createGameSession,
   getGameSession,
+  createGameSession,
+  updateGameSession,
 } from "./services/GameSessionService";
 
 const app = express();
@@ -20,12 +21,13 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // New game
-app.get("/api/new", async (req: Request, res: Response) => {
+app.get("/api/new-game-session", async (req: Request, res: Response) => {
   const secretWord = await getSecretWord();
-  res.json({ secretWord });
+  const newGameSession = await createGameSession(secretWord);
+  res.json({ newGameSession });
 });
 
-// Get game session
+// Get current game session
 app.get("/api/game-session", async (req: Request, res: Response) => {
   const gameSessionString = await getGameSession();
   if (!gameSessionString) {
@@ -45,6 +47,13 @@ app.post("/api/guess", async (req: Request, res: Response) => {
   const { word } = req.body;
   const isValid = await isValidWord(word);
   res.json({ isValid });
+});
+
+// Update game session
+app.put("/api/game-session", async (req: Request, res: Response) => {
+  const { newGameSession } = req.body;
+  await updateGameSession(newGameSession);
+  res.json({ message: "Game session updated" });
 });
 
 // Start server
