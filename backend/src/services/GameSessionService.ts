@@ -1,20 +1,39 @@
 import redisClient from "./RedisService";
 import { v4 as uuidv4 } from "uuid";
 import { GameSession } from "../types";
+import { getSecretWord } from "./WordService";
 
-export const createGameSession = async (secretWord: string) => {
-  const gameSession = await redisClient.set(
-    "gameSession",
-    JSON.stringify({
-      id: uuidv4(),
-      secretWord,
-      wordsTried: ["", "", "", "", "", ""],
-      currentRow: 0,
-      isGameOver: false,
-      createdAt: new Date(),
-    })
-  );
-  return gameSession;
+export const createGameSession = async () => {
+  // Fetch the secret word asynchronously
+  const secretWord = await getSecretWord();
+
+  // Define the new game session structure
+  const newGameSession: GameSession = {
+    id: uuidv4(),
+    secretWord: secretWord,
+    wordsTried: ["", "", "", "", "", ""],
+    currentRow: 0,
+    isGameOver: false,
+    createdAt: new Date(),
+  };
+
+  try {
+    // Set the game session in Redis
+    const result = await redisClient.set(
+      "gameSession",
+      JSON.stringify(newGameSession)
+    );
+
+    if (result !== "OK") {
+      console.error("Failed to set game session in Redis:", result);
+      throw new Error("Failed to create game session in storage.");
+    }
+
+    return newGameSession;
+  } catch (error) {
+    console.error("Error creating game session:", error);
+    return null;
+  }
 };
 
 export const getGameSession = async () => {

@@ -39,8 +39,7 @@ app.get("/", (req: Request, res: Response) => {
 
 // New game
 app.get("/api/new-game-session", async (req: Request, res: Response) => {
-  const secretWord = await getSecretWord();
-  const newGameSession = await createGameSession(secretWord);
+  const newGameSession = await createGameSession();
   if (newGameSession) {
     res.json(newGameSession);
   } else {
@@ -85,6 +84,12 @@ app.put("/api/game-session", async (req: Request, res: Response) => {
   const newGameSession = req.body.newGameSession;
   await updateGameSession(newGameSession);
   res.json({ message: "Game session updated" });
+});
+
+// Get secret word
+app.get("/api/secret-word", async (req: Request, res: Response) => {
+  const secretWord = await getSecretWord();
+  res.json({ secretWord });
 });
 
 // Start server
