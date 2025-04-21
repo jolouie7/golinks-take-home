@@ -20,6 +20,13 @@ export const createGameSession = async (secretWord: string) => {
 export const getGameSession = async () => {
   try {
     console.log("Attempting to get 'gameSession' from Redis...");
+    if (
+      typeof redisClient.status !== "string" ||
+      redisClient.status !== "ready"
+    ) {
+      console.warn(`Redis client status is not ready: ${redisClient.status}`);
+    }
+
     const gameSession = await redisClient.get("gameSession");
     console.log(
       `Redis returned for 'gameSession': ${
