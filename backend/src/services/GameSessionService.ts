@@ -18,17 +18,37 @@ export const createGameSession = async (secretWord: string) => {
 };
 
 export const getGameSession = async () => {
-  const gameSession = await redisClient.get("gameSession");
-  return gameSession;
+  try {
+    const gameSession = await redisClient.get("gameSession");
+    return gameSession;
+  } catch (error) {
+    console.error("Error retrieving game session:", error);
+  }
 };
 
 // TODO: add validation to check incoming gameSession
 export const updateGameSession = async (newGameSession: GameSession) => {
-  const gameSession = await redisClient.set(
-    "gameSession",
-    JSON.stringify(newGameSession)
-  );
-  return gameSession;
+  if (!newGameSession) {
+    console.error("Game session data is required", newGameSession);
+    throw new Error("Game session data is required");
+  }
+
+  try {
+    const res = await deleteGameSession();
+
+    const result = await redisClient.set(
+      "gameSession",
+      JSON.stringify(newGameSession)
+    );
+
+    if (result !== "OK") {
+      throw new Error(`Failed to update game session: ${result}`);
+    }
+    return result;
+  } catch (error) {
+    console.error("Error updating game session:", error);
+    throw error;
+  }
 };
 
 export const deleteGameSession = async () => {
