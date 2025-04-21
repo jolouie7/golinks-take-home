@@ -35,3 +35,15 @@ export const getSecretWord = async () => {
   }
   return secretWord;
 };
+
+export const isValidWord = async (word: string): Promise<boolean> => {
+  if (!word || typeof word !== "string") {
+    return false;
+  }
+
+  const normalizedWord = word.toLowerCase().trim();
+
+  // Check if the word exists in Redis set
+  const isValid = await redisClient.sismember(VALID_WORDS_KEY, normalizedWord);
+  return Boolean(isValid);
+};
