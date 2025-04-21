@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Delete } from "lucide-react";
 import { HowToPlayModal } from "@/components/HowToPlayModal";
@@ -20,11 +20,35 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   }>({});
   const [isGameOver, setIsGameOver] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isGameOver) return;
+
+      const key = event.key.toUpperCase();
+
+      if (key === "ENTER") {
+        handleSubmit();
+      } else if (key === "BACKSPACE" || key === "DELETE") {
+        handleDelete();
+      } else if (/^[A-Z]$/.test(key) && currentWord.length < 5) {
+        handleLetterClick(key);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentWord]);
+
   const handleCloseModal = () => {
     setShowHowToPlay(false);
   };
 
   const handleLetterClick = (letter: string) => {
+    if (isGameOver) return;
+
     if (currentWord.length < 5) {
       setCurrentWord([...currentWord, letter]);
     }
@@ -73,6 +97,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
       if (checkIfSecretWord(currentWord.join(""))) {
         toast.success("You win!");
+        setIsGameOver(true);
       }
 
       const newWordsTried = [...wordsTried];
@@ -100,6 +125,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
     if (currentRow === 6) {
       toast.error("You lose!");
+      setIsGameOver(true);
     }
   };
 
