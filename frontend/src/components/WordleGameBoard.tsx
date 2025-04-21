@@ -9,15 +9,6 @@ interface WordleGameBoardProps {
   onBackToHome: () => void;
 }
 
-// const gameSession = {
-//   id: "fa40f038-90ce-44c7-b3ec-2213ef4f51e8",
-//   secretWord: "INBOX",
-//   wordsTried: ["INPUT", "PILOT", "", "", "", ""],
-//   currentRow: 2,
-//   isGameOver: false,
-//   // createdAt: new Date(),
-// };
-
 function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
   const [wordsTried, setWordsTried] = useState<string[]>(Array(6).fill(""));
@@ -29,7 +20,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   }>({});
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // TODO: BUG: When i load gameSession the keyboard doesn't show highlighted letters.
   useEffect(() => {
     const getGameSession = async () => {
       /*
@@ -75,10 +65,59 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
       setWordsTried(gameSessionData.wordsTried);
       setCurrentRow(gameSessionData.currentRow);
       setIsGameOver(gameSessionData.isGameOver);
+
+      // Update keyboard letter status based on words tried
+      const newLetterStatus: {
+        [key: string]: "correct" | "present" | "absent";
+      } = {};
+
+      // Process each word that has been tried
+      gameSessionData.wordsTried.forEach((word: string, rowIndex: number) => {
+        if (word && rowIndex < gameSessionData.currentRow) {
+          for (let i = 0; i < word.length; i++) {
+            const letter = word[i].toUpperCase();
+            const status = getLetterStatusForKeyboard(
+              letter,
+              i,
+              gameSessionData.secretWord
+            );
+
+            // Only update if the new status is better than existing
+            if (
+              !newLetterStatus[letter] ||
+              (newLetterStatus[letter] === "absent" && status !== "absent") ||
+              (newLetterStatus[letter] === "present" && status === "correct")
+            ) {
+              newLetterStatus[letter] = status;
+            }
+          }
+        }
+      });
+
+      setLetterStatus(newLetterStatus);
     };
 
     getGameSession();
   }, []);
+
+  // Helper function to determine letter status for keyboard
+  const getLetterStatusForKeyboard = (
+    letter: string,
+    position: number,
+    secret: string
+  ) => {
+    if (!letter) return "absent";
+
+    if (secret[position] === letter) {
+      return "correct";
+    }
+
+    if (secret.includes(letter)) {
+      return "present";
+    }
+
+    return "absent";
+  };
 
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
@@ -159,15 +198,29 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
   // TODO: When clicking enter we need to save game state as a checkpoint.
   const handleSubmit = async () => {
-    if (currentWord.length !== 5 || currentRow >= 6) {
-      if (currentRow >= 6) {
-        toast.error("You lose!");
-        setIsGameOver(true);
-      }
+    if (currentWord.length !== 5) {
       return;
     }
 
+    if (currentRow >= 6) {
+      toast.error("Game Over!");
+      setIsGameOver(true);
+    }
+
     const wordToCheck = currentWord.join("");
+
+    // Check if the word is correct
+    if (checkIfSecretWord(wordToCheck)) {
+      // Update letter status for the winning word
+      // const newLetterStatus = { ...letterStatus };
+      // currentWord.forEach((letter) => {
+      //   newLetterStatus[letter] = "correct";
+      // });
+      // setLetterStatus(newLetterStatus);
+
+      toast.success("You win!");
+      setIsGameOver(true);
+    }
 
     // Check if the word is valid
     const isValid = await isValidWord(wordToCheck);
@@ -180,19 +233,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     const newWordsTried = [...wordsTried];
     newWordsTried[currentRow] = wordToCheck;
     setWordsTried(newWordsTried);
-
-    // Check if the word is correct
-    if (checkIfSecretWord(wordToCheck)) {
-      // Update letter status for the winning word
-      const newLetterStatus = { ...letterStatus };
-      currentWord.forEach((letter) => {
-        newLetterStatus[letter] = "correct";
-      });
-      setLetterStatus(newLetterStatus);
-
-      toast.success("You win!");
-      setIsGameOver(true);
-    }
 
     // Update letter status for keyboard
     const newLetterStatus = { ...letterStatus };
