@@ -3,10 +3,33 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-if (!process.env.REDIS_URL) {
+const redisUrl = process.env.REDIS_URL;
+
+if (!redisUrl) {
+  console.error("FATAL ERROR: REDIS_URL environment variable is not set.");
+  // Throwing here might prevent seeing other logs if it happens early
+  // Consider process.exit(1) or just logging and letting connection fail
   throw new Error("REDIS_URL is not set");
 }
 
-const redisClient = new Redis(process.env.REDIS_URL);
+console.log("Attempting to connect to Redis...");
+const redisClient = new Redis(redisUrl);
+
+redisClient.on("connect", () => {
+  console.log("Successfully connected to Redis.");
+});
+
+redisClient.on("ready", () => {
+  console.log("Redis client is ready.");
+});
+
+redisClient.on("error", (error) => {
+  console.error("Redis connection error:", error);
+  // Depending on the error, you might want to exit or implement retry logic
+});
+
+redisClient.on("end", () => {
+  console.log("Redis connection closed.");
+});
 
 export default redisClient;

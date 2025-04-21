@@ -19,25 +19,32 @@ export const createGameSession = async (secretWord: string) => {
 
 export const getGameSession = async () => {
   try {
-    console.log("Attempting to get 'gameSession' from Redis...");
+    console.log(
+      "getGameSession: Attempting to get 'gameSession' from Redis..."
+    );
     if (
       typeof redisClient.status !== "string" ||
       redisClient.status !== "ready"
     ) {
-      console.warn(`Redis client status is not ready: ${redisClient.status}`);
+      console.warn(
+        `getGameSession: Redis client status is not ready: ${redisClient.status}`
+      );
     }
 
     const gameSession = await redisClient.get("gameSession");
     console.log(
-      `Redis returned for 'gameSession': ${
+      `getGameSession: Redis returned for 'gameSession': ${
         typeof gameSession === "string"
           ? gameSession.substring(0, 50) + "..."
-          : gameSession
+          : typeof gameSession
       }`
     );
     return gameSession;
   } catch (error) {
-    console.error("Error retrieving game session from Redis:", error);
+    console.error(
+      "getGameSession: Error retrieving game session from Redis:",
+      error
+    );
     return null;
   }
 };

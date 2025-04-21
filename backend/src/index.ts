@@ -50,16 +50,26 @@ app.get("/api/new-game-session", async (req: Request, res: Response) => {
 
 // Get current game session
 app.get("/api/game-session", async (req: Request, res: Response) => {
-  const gameSessionString = await getGameSession();
-  if (!gameSessionString) {
-    return res.status(404).json({ error: "Game session not found" });
-  }
-
+  console.log("Entered GET /api/game-session handler try block.");
   try {
-    const gameSession = JSON.parse(gameSessionString);
-    res.json(gameSession);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to parse game session" });
+    console.log("GET /api/game-session route handler started.");
+    const gameSessionString = await getGameSession();
+    if (!gameSessionString) {
+      return res.status(404).json({ error: "Game session not found" });
+    }
+
+    try {
+      const gameSession = JSON.parse(gameSessionString);
+      res.json(gameSession);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to parse game session" });
+    }
+  } catch (error: any) {
+    console.error(
+      "Caught error inside GET /api/game-session handler catch block:",
+      error
+    );
+    res.status(500).json({ error: "Failed to get game session" });
   }
 });
 
@@ -71,8 +81,8 @@ app.post("/api/guess", async (req: Request, res: Response) => {
 });
 
 // Update game session
-app.put("api/game-session", async (req: Request, res: Response) => {
-  const { newGameSession } = req.body;
+app.put("/api/game-session", async (req: Request, res: Response) => {
+  const newGameSession = req.body.newGameSession;
   await updateGameSession(newGameSession);
   res.json({ message: "Game session updated" });
 });
