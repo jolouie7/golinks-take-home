@@ -76,7 +76,7 @@ export const updateGameSession = async (newGameSession: GameSession) => {
   }
 
   try {
-    const res = await deleteGameSession();
+    await deleteGameSession();
 
     const result = await redisClient.set(
       "gameSession",
