@@ -125,7 +125,7 @@ function WordleGameBoard() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentWord]);
+  }, [currentWord, isGameOver]);
 
   const handleCloseModal = () => {
     setShowHowToPlay(false);
@@ -167,6 +167,7 @@ function WordleGameBoard() {
     return "absent";
   };
 
+  // Update tiles color for the current word
   const updateLetterStatus = () => {
     const newLetterStatus = { ...letterStatus };
     currentWord.forEach((letter, index) => {
@@ -249,7 +250,6 @@ function WordleGameBoard() {
   };
 
   const handleSubmit = async () => {
-    console.log("secret word:", secretWord);
     const wordToCheck = currentWord.join("");
 
     if (currentWord.length !== 5) {
@@ -316,6 +316,24 @@ function WordleGameBoard() {
     setLetterStatus({});
   };
 
+  const getNumberOfVowel = () => {
+    const vowel = "AEIOU";
+    let count = 0;
+
+    for (let i = 0; i < secretWord.length; i++) {
+      if (vowel.includes(secretWord[i])) {
+        count++;
+      }
+    }
+
+    return count;
+  };
+
+  const getHint = async () => {
+    const numberOfVowels = getNumberOfVowel();
+    toast(`There are ${numberOfVowels} vowels in the secret word!`);
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen w-full bg-[#121213] text-white">
       {/* How To Play Modal */}
@@ -328,13 +346,23 @@ function WordleGameBoard() {
             <ArrowLeft />
           </button>
         </Link>
-        <Button
-          className="cursor-pointer"
-          onClick={handleClickStartNewGameAndGetNewSecretWord}
-          disabled={!isGameOver}
-        >
-          Reset with new Secret Word
-        </Button>
+        <div className=" flex gap-2">
+          <Button
+            className="cursor-pointer"
+            onClick={getHint}
+            variant={"secondary"}
+          >
+            getHint
+          </Button>
+          <Button
+            className="cursor-pointer"
+            onClick={handleClickStartNewGameAndGetNewSecretWord}
+            disabled={!isGameOver}
+            variant={"secondary"}
+          >
+            Reset with new Secret Word
+          </Button>
+        </div>
       </header>
 
       {/* Game Board - 5x6 grid */}
