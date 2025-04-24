@@ -88,10 +88,11 @@ app.put("/api/game-session", async (req: Request, res: Response) => {
 });
 
 // Get secret word
-app.get("/api/secret-word", async (req: Request, res: Response) => {
-  const secretWord = await getSecretWord();
-  res.json({ secretWord });
-});
+// TODO: Either remove or allow only admins check secret word
+// app.get("/api/secret-word", async (req: Request, res: Response) => {
+//   const secretWord = await getSecretWord();
+//   res.json({ secretWord });
+// });
 
 // Forces new game and new secret word
 app.get("/api/force-new-game", async (req: Request, res: Response) => {
