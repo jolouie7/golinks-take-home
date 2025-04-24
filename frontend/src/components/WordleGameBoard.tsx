@@ -4,6 +4,7 @@ import { ArrowLeft, Delete } from "lucide-react";
 import { HowToPlayModal } from "@/components/HowToPlayModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 interface WordleGameBoardProps {
   onBackToHome: () => void;
@@ -162,6 +163,24 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     return "absent";
   };
 
+  const updateLetterStatus = () => {
+    const newLetterStatus = { ...letterStatus };
+    currentWord.forEach((letter, index) => {
+      const status = getLetterStatus(letter, index);
+      if (
+        !letterStatus[letter] ||
+        (letterStatus[letter] === "absent" && status !== "absent") ||
+        (letterStatus[letter] === "present" && status === "correct")
+      ) {
+        newLetterStatus[letter] = status;
+      }
+    });
+
+    setLetterStatus(newLetterStatus);
+    setCurrentRow(currentRow + 1);
+    setCurrentWord([]);
+  };
+
   const isValidWord = async (word: string): Promise<boolean> => {
     const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) {
@@ -223,26 +242,35 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
       await updateGameSession(currentGameSession);
 
       toast.error("Game Over!");
-      setIsGameOver(true);
+      await setIsGameOver(true);
     }
 
     const wordToCheck = currentWord.join("");
 
     // Check if the word is correct
     if (checkIfSecretWord(wordToCheck)) {
-      // Update game session
+      // Update the words tried array first to ensure the word appears on the board
+      const newWordsTried = [...wordsTried];
+      newWordsTried[currentRow] = wordToCheck;
+      setWordsTried(newWordsTried);
+
+      await setIsGameOver(true);
+
+      // Update game session with the updated state
       const currentGameSession = {
         id: gameSessionId,
         secretWord: secretWord,
-        wordsTried: wordsTried,
+        wordsTried: newWordsTried,
         currentRow: currentRow + 1,
         isGameOver: true,
       };
 
       await updateGameSession(currentGameSession);
 
+      updateLetterStatus();
+
       toast.success("You win!");
-      setIsGameOver(true);
+      return;
     }
 
     // Check if the word is valid
@@ -268,22 +296,11 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
     await updateGameSession(currentGameSession);
 
-    // Update letter status for keyboard
-    const newLetterStatus = { ...letterStatus };
-    currentWord.forEach((letter, index) => {
-      const status = getLetterStatus(letter, index);
-      if (
-        !letterStatus[letter] ||
-        (letterStatus[letter] === "absent" && status !== "absent") ||
-        (letterStatus[letter] === "present" && status === "correct")
-      ) {
-        newLetterStatus[letter] = status;
-      }
-    });
+    updateLetterStatus();
+  };
 
-    setLetterStatus(newLetterStatus);
-    setCurrentRow(currentRow + 1);
-    setCurrentWord([]);
+  const handleClickStartNewGameAndGetNewSecretWord = () => {
+    console.log("get new word");
   };
 
   return (
@@ -292,12 +309,18 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
       <HowToPlayModal isOpen={showHowToPlay} onClose={handleCloseModal} />
 
       {/* Header */}
-      <header className="w-full border-b border-gray-700 p-3 flex justify-start items-center ">
+      <header className="w-full border-b border-gray-700 p-3 flex justify-between items-center ">
         <Link to="/">
           <button onClick={onBackToHome} className="p-2">
             <ArrowLeft />
           </button>
         </Link>
+        <Button
+          className="cursor-pointer"
+          onClick={handleClickStartNewGameAndGetNewSecretWord}
+        >
+          Reset with new Secret Word
+        </Button>
       </header>
 
       {/* Game Board - 5x6 grid */}
