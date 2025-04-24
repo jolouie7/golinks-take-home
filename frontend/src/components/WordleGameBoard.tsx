@@ -248,7 +248,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
 
   const handleSubmit = async () => {
     const wordToCheck = currentWord.join("");
-    console.log("current word", wordToCheck);
 
     if (currentWord.length !== 5) {
       return;
@@ -299,8 +298,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     await updateGameSession(currentGameSession);
 
     updateLetterStatus();
-
-    console.log(`current word=${currentWord} - secret word=${secretWord}`);
   };
 
   const handleClickStartNewGameAndGetNewSecretWord = async () => {
