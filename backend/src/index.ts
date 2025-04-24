@@ -6,6 +6,7 @@ import {
   getGameSession,
   createGameSession,
   updateGameSession,
+  forceStartNewGameWithNewSecretWord,
 } from "./services/GameSessionService";
 
 const app = express();
@@ -90,6 +91,12 @@ app.put("/api/game-session", async (req: Request, res: Response) => {
 app.get("/api/secret-word", async (req: Request, res: Response) => {
   const secretWord = await getSecretWord();
   res.json({ secretWord });
+});
+
+// Forces new game and new secret word
+app.get("/api/force-new-game", async (req: Request, res: Response) => {
+  const newGameSession = await forceStartNewGameWithNewSecretWord();
+  res.json(newGameSession);
 });
 
 // Start server

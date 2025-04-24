@@ -25,7 +25,7 @@ export const selectAndLoadNewSecretWord = async () => {
     secondsUntilMidnight
   );
 
-  return secretWord;
+  return secretWord.toUpperCase();
 };
 
 export const getSecretWord = async () => {
@@ -33,7 +33,7 @@ export const getSecretWord = async () => {
   if (!secretWord) {
     return selectAndLoadNewSecretWord();
   }
-  return secretWord;
+  return secretWord.toUpperCase();
 };
 
 export const isValidWord = async (word: string): Promise<boolean> => {

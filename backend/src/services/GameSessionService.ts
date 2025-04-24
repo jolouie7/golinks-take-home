@@ -76,11 +76,17 @@ export const updateGameSession = async (newGameSession: GameSession) => {
   }
 
   try {
-    await deleteGameSession();
+    const tempGameSession = {
+      id: newGameSession.id,
+      secretWord: newGameSession.secretWord,
+      wordsTried: newGameSession.wordsTried,
+      currentRow: newGameSession.currentRow,
+      isGameOver: newGameSession.isGameOver,
+    };
 
     const result = await redisClient.set(
       "gameSession",
-      JSON.stringify(newGameSession)
+      JSON.stringify(tempGameSession)
     );
 
     if (result !== "OK") {
@@ -94,6 +100,39 @@ export const updateGameSession = async (newGameSession: GameSession) => {
 };
 
 export const deleteGameSession = async () => {
-  const gameSession = await redisClient.del("gameSession");
-  return gameSession;
+  await redisClient.del("gameSession");
+  return { Message: "Deleted game session" };
+};
+
+export const forceStartNewGameWithNewSecretWord = async () => {
+  await redisClient.del("wordle:secretWord");
+
+  const secretWord = await getSecretWord();
+
+  const newGameSession: GameSession = {
+    id: uuidv4(),
+    secretWord: secretWord,
+    wordsTried: ["", "", "", "", "", ""],
+    currentRow: 0,
+    isGameOver: false,
+    createdAt: new Date(),
+  };
+
+  try {
+    // Set the game session in Redis
+    const result = await redisClient.set(
+      "gameSession",
+      JSON.stringify(newGameSession)
+    );
+
+    if (result !== "OK") {
+      console.error("Failed to set game session in Redis:", result);
+      throw new Error("Failed to create game session in storage.");
+    }
+
+    return newGameSession;
+  } catch (error) {
+    console.error("Error creating game session:", error);
+    return null;
+  }
 };
