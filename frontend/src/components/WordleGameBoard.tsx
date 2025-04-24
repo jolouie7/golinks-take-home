@@ -1,18 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useNavigationType } from "react-router-dom";
 import { ArrowLeft, Delete } from "lucide-react";
 import { HowToPlayModal } from "@/components/HowToPlayModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
-interface WordleGameBoardProps {
-  onBackToHome: () => void;
-}
-
 const apiUrl = import.meta.env.VITE_API_URL;
 
-function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
+function WordleGameBoard() {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
   const [gameSessionId, setGameSessionId] = useState("");
   const [wordsTried, setWordsTried] = useState<string[]>(Array(6).fill(""));
@@ -23,6 +19,12 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     [key: string]: "correct" | "present" | "absent";
   }>({});
   const [isGameOver, setIsGameOver] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleBackToHome = () => {
+    navigate("/");
+  };
 
   useEffect(() => {
     const getGameSession = async () => {
@@ -123,7 +125,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentWord, isGameOver]);
+  }, [currentWord]);
 
   const handleCloseModal = () => {
     setShowHowToPlay(false);
@@ -247,6 +249,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   };
 
   const handleSubmit = async () => {
+    console.log("secret word:", secretWord);
     const wordToCheck = currentWord.join("");
 
     if (currentWord.length !== 5) {
@@ -321,7 +324,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
       {/* Header */}
       <header className="w-full border-b border-gray-700 p-3 flex justify-between items-center ">
         <Link to="/">
-          <button onClick={onBackToHome} className="p-2">
+          <button onClick={handleBackToHome} className="p-2">
             <ArrowLeft />
           </button>
         </Link>

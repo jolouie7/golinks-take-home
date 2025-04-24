@@ -1,13 +1,15 @@
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-interface WordleLandingPageProps {
-  onPlayClick: () => void;
-}
+function WordleLandingPage() {
+  const navigate = useNavigate();
 
-function WordleLandingPage({ onPlayClick }: WordleLandingPageProps) {
   const today = new Date();
   const formattedDate = format(today, "MMMM d, yyyy");
+
+  const handlePlayClick = () => {
+    navigate("/game");
+  };
 
   return (
     <div className="flex flex-col items-center justify-center text-center px-6 max-w-lg mx-auto">
@@ -47,7 +49,7 @@ function WordleLandingPage({ onPlayClick }: WordleLandingPageProps) {
         </button>
         <Link to="/game">
           <button
-            onClick={onPlayClick}
+            onClick={handlePlayClick}
             className="bg-black text-white rounded-full py-3 px-12 text-base font-medium hover:bg-gray-800 transition"
           >
             Play
