@@ -4,14 +4,17 @@ import { GameSession } from "../types";
 import { getSecretWord } from "./WordService";
 
 export const createGameSession = async () => {
-  // Fetch the secret word asynchronously
-  const secretWord = await getSecretWord();
-
   // Define the new game session structure
   const newGameSession: GameSession = {
     id: uuidv4(),
-    secretWord: secretWord,
-    wordsTried: ["", "", "", "", "", ""],
+    wordsTried: [
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+    ],
     currentRow: 0,
     isGameOver: false,
     createdAt: new Date(),
@@ -78,7 +81,6 @@ export const updateGameSession = async (newGameSession: GameSession) => {
   try {
     const tempGameSession = {
       id: newGameSession.id,
-      secretWord: newGameSession.secretWord,
       wordsTried: newGameSession.wordsTried,
       currentRow: newGameSession.currentRow,
       isGameOver: newGameSession.isGameOver,
@@ -106,13 +108,18 @@ export const deleteGameSession = async () => {
 
 export const forceStartNewGameWithNewSecretWord = async () => {
   await redisClient.del("wordle:secretWord");
-
-  const secretWord = await getSecretWord();
+  await getSecretWord();
 
   const newGameSession: GameSession = {
     id: uuidv4(),
-    secretWord: secretWord,
-    wordsTried: ["", "", "", "", "", ""],
+    wordsTried: [
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+      { word: "", wordStatus: [] },
+    ],
     currentRow: 0,
     isGameOver: false,
     createdAt: new Date(),

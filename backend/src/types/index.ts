@@ -6,8 +6,10 @@ export interface AppError extends Error {
 
 export interface GameSession {
   id: string;
-  secretWord: string;
-  wordsTried: string[];
+  wordsTried: {
+    word: string;
+    wordStatus: string[];
+  }[];
   currentRow: number;
   isGameOver: boolean;
   createdAt: Date;
