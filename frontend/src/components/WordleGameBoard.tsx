@@ -328,6 +328,7 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
         <Button
           className="cursor-pointer"
           onClick={handleClickStartNewGameAndGetNewSecretWord}
+          disabled={!isGameOver}
         >
           Reset with new Secret Word
         </Button>
