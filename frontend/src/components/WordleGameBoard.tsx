@@ -10,6 +10,8 @@ interface WordleGameBoardProps {
   onBackToHome: () => void;
 }
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
   const [gameSessionId, setGameSessionId] = useState("");
@@ -208,7 +210,6 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
   }
 
   const updateGameSession = async (newGameSession: GameSession) => {
-    const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) {
       console.error("Error: VITE_API_URL environment variable not set.");
       toast.error("API URL not configured. Cannot save game.");
@@ -224,52 +225,53 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     });
   };
 
+  const handleGameEnd = async (wordToCheck: string) => {
+    // Update the words tried array first to ensure the word appears on the board
+    const newWordsTried = [...wordsTried];
+    newWordsTried[currentRow] = wordToCheck;
+    setWordsTried(newWordsTried);
+
+    await setIsGameOver(true);
+
+    // Update game session with the updated state
+    const currentGameSession = {
+      id: gameSessionId,
+      secretWord: secretWord,
+      wordsTried: newWordsTried,
+      currentRow: currentRow + 1,
+      isGameOver: true,
+    };
+
+    await updateGameSession(currentGameSession);
+    updateLetterStatus();
+  };
+
   const handleSubmit = async () => {
+    const wordToCheck = currentWord.join("");
+    console.log("current word", wordToCheck);
+
     if (currentWord.length !== 5) {
       return;
     }
 
-    if (currentRow >= 6) {
-      // Update game session
-      const currentGameSession = {
-        id: gameSessionId,
-        secretWord: secretWord,
-        wordsTried: wordsTried,
-        currentRow: currentRow + 1,
-        isGameOver: true,
-      };
-
-      await updateGameSession(currentGameSession);
-
-      toast.error("Game Over!");
-      await setIsGameOver(true);
+    if (isGameOver) {
+      return;
     }
-
-    const wordToCheck = currentWord.join("");
 
     // Check if the word is correct
     if (checkIfSecretWord(wordToCheck)) {
-      // Update the words tried array first to ensure the word appears on the board
-      const newWordsTried = [...wordsTried];
-      newWordsTried[currentRow] = wordToCheck;
-      setWordsTried(newWordsTried);
-
-      await setIsGameOver(true);
-
-      // Update game session with the updated state
-      const currentGameSession = {
-        id: gameSessionId,
-        secretWord: secretWord,
-        wordsTried: newWordsTried,
-        currentRow: currentRow + 1,
-        isGameOver: true,
-      };
-
-      await updateGameSession(currentGameSession);
-
-      updateLetterStatus();
+      handleGameEnd(wordToCheck);
 
       toast.success("You win!");
+      return;
+    }
+
+    // The user didn't get the secret word
+    // If we are on the last row (0 based indexing)
+    if (currentRow === 5) {
+      handleGameEnd(wordToCheck);
+
+      toast.error(`Game Over! Secret Word was ${secretWord}`);
       return;
     }
 
@@ -297,10 +299,21 @@ function WordleGameBoard({ onBackToHome }: WordleGameBoardProps) {
     await updateGameSession(currentGameSession);
 
     updateLetterStatus();
+
+    console.log(`current word=${currentWord} - secret word=${secretWord}`);
   };
 
-  const handleClickStartNewGameAndGetNewSecretWord = () => {
-    console.log("get new word");
+  const handleClickStartNewGameAndGetNewSecretWord = async () => {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/force-new-game`
+    );
+    const data = await res.json();
+
+    setSecretWord(data.secretWord);
+    setWordsTried(data.wordsTried);
+    setCurrentRow(data.currentRow);
+    setIsGameOver(data.isGameOver);
+    setLetterStatus({});
   };
 
   return (
