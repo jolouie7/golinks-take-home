@@ -4,7 +4,6 @@ import { GameSession } from "../types";
 import { getSecretWord } from "./WordService";
 
 export const createGameSession = async () => {
-  // Define the new game session structure
   const newGameSession: GameSession = {
     id: uuidv4(),
     wordsTried: [
@@ -80,7 +79,7 @@ export const updateGameSession = async (newGameSession: GameSession) => {
 
   try {
     const secretWord = await getSecretWord();
-    // i need to go through each word in wordsTried.wordStatus and check if there are combined 5 instances of "absent","present","correct" before sending the updated gameSession back to the frontend
+
     newGameSession.wordsTried.forEach((wordObject) => {
       const word = wordObject.word;
       if (wordObject.wordStatus.length !== 5) {
