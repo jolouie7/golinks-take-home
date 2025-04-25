@@ -2,7 +2,6 @@ import express from "express";
 import { Request, Response } from "express";
 import cors from "cors";
 import {
-  checkLetterStatus,
   countVowels,
   getSecretWord,
   isValidWord,
@@ -107,13 +106,6 @@ app.post("/api/is-secret-word", async (req: Request, res: Response) => {
 app.get("/api/vowel-count", async (req: Request, res: Response) => {
   const numberOfVowels = await countVowels();
   res.json({ count: numberOfVowels });
-});
-
-app.post("/api/check-letter-status", async (req: Request, res: Response) => {
-  const letter = req.body.letter;
-  const position = req.body.index;
-  const letterStatus = await checkLetterStatus(letter, position);
-  res.json(letterStatus);
 });
 
 // Get secret word
