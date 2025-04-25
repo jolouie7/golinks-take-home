@@ -273,10 +273,9 @@ function WordleGameBoard() {
       return;
     }
 
-    // Check if the word is valid
     const isValid = await isValidWord(wordToCheck);
     if (!isValid) {
-      toast.error("Not a valid word");
+      toast("Not a valid word");
       return;
     }
 
@@ -322,7 +321,7 @@ function WordleGameBoard() {
     }
   };
 
-  const getNumberOfVowel = async () => {
+  const getNumberOfVowels = async () => {
     try {
       const response = await fetch(`${apiUrl}/api/vowel-count`);
       const data = await response.json();
@@ -334,9 +333,9 @@ function WordleGameBoard() {
   };
 
   const getHint = async () => {
-    const numberOfVowels = await getNumberOfVowel();
+    const numberOfVowels = await getNumberOfVowels();
     if (numberOfVowels !== null) {
-      toast(`There are ${numberOfVowels} vowels in the secret word!`);
+      toast(`Number of vowels in the secret word: ${numberOfVowels}`);
     } else {
       toast.error("Couldn't get hint right now");
     }

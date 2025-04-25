@@ -68,3 +68,15 @@ export const checkLetterStatus = async (
 
   return "absent";
 };
+
+export const countVowels = async (): Promise<number> => {
+  const secretWord = await getSecretWord();
+  const vowels = ["A", "E", "I", "O", "U"];
+  let count = 0;
+  for (const letter of secretWord) {
+    if (vowels.includes(letter)) {
+      count++;
+    }
+  }
+  return count;
+};
