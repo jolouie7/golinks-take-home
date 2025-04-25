@@ -1,7 +1,11 @@
 import express from "express";
 import { Request, Response } from "express";
 import cors from "cors";
-import { getSecretWord, isValidWord } from "./services/WordService";
+import {
+  checkLetterStatus,
+  getSecretWord,
+  isValidWord,
+} from "./services/WordService";
 import {
   getGameSession,
   createGameSession,
@@ -73,26 +77,43 @@ app.get("/api/game-session", async (req: Request, res: Response) => {
   }
 });
 
-// Guess word
-app.post("/api/guess", async (req: Request, res: Response) => {
-  const { word } = req.body;
-  const isValid = await isValidWord(word);
-  res.json({ isValid });
-});
-
 // Update game session
 app.put("/api/game-session", async (req: Request, res: Response) => {
-  const newGameSession = req.body.newGameSession;
+  const newGameSession = req.body;
   await updateGameSession(newGameSession);
-  res.json({ message: "Game session updated" });
+  res.json(newGameSession);
+});
+
+// Check if word is valid
+app.post("/api/is-valid-word", async (req: Request, res: Response) => {
+  const word = req.body.word;
+  const isValid = await isValidWord(word);
+  res.json(isValid);
+});
+
+// Check if letter is in the secret word
+app.post("/api/is-secret-word", async (req: Request, res: Response) => {
+  const secretWord = await getSecretWord();
+  const word = req.body.word;
+  if (word === secretWord) {
+    res.json(true);
+  } else {
+    res.json(false);
+  }
+});
+
+app.post("/api/check-letter-status", async (req: Request, res: Response) => {
+  const letter = req.body.letter;
+  const position = req.body.index;
+  const letterStatus = await checkLetterStatus(letter, position);
+  res.json(letterStatus);
 });
 
 // Get secret word
-// TODO: Either remove or allow only admins check secret word
-// app.get("/api/secret-word", async (req: Request, res: Response) => {
-//   const secretWord = await getSecretWord();
-//   res.json({ secretWord });
-// });
+app.get("/api/secret-word", async (req: Request, res: Response) => {
+  const secretWord = await getSecretWord();
+  res.json({ secretWord });
+});
 
 // Forces new game and new secret word
 app.get("/api/force-new-game", async (req: Request, res: Response) => {

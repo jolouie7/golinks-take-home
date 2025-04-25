@@ -47,3 +47,24 @@ export const isValidWord = async (word: string): Promise<boolean> => {
   const isValid = await redisClient.sismember(VALID_WORDS_KEY, normalizedWord);
   return Boolean(isValid);
 };
+
+export const checkLetterStatus = async (
+  letter: string,
+  position: number
+): Promise<string> => {
+  const secretWord = await getSecretWord();
+  letter = letter.toUpperCase();
+  if (!letter) return "absent";
+
+  // If the letter is in the correct position
+  if (secretWord[position] === letter) {
+    return "correct";
+  }
+
+  // If the letter exists in the word but in wrong position
+  if (secretWord.includes(letter)) {
+    return "present";
+  }
+
+  return "absent";
+};

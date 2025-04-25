@@ -79,6 +79,23 @@ export const updateGameSession = async (newGameSession: GameSession) => {
   }
 
   try {
+    const secretWord = await getSecretWord();
+    // i need to go through each word in wordsTried.wordStatus and check if there are combined 5 instances of "absent","present","correct" before sending the updated gameSession back to the frontend
+    newGameSession.wordsTried.forEach((wordObject) => {
+      const word = wordObject.word;
+      if (wordObject.wordStatus.length !== 5) {
+        for (let i = 0; i < word.length; i++) {
+          if (word[i] === secretWord[i]) {
+            wordObject.wordStatus.push("correct");
+          } else if (secretWord.includes(word[i])) {
+            wordObject.wordStatus.push("present");
+          } else {
+            wordObject.wordStatus.push("absent");
+          }
+        }
+      }
+    });
+
     const tempGameSession = {
       id: newGameSession.id,
       wordsTried: newGameSession.wordsTried,

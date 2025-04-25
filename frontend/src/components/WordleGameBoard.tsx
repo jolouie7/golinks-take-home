@@ -8,17 +8,33 @@ import { Button } from "./ui/button";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
+interface WordTried {
+  word: string;
+  wordStatus: string[];
+}
+
+interface GameSession {
+  id: string;
+  wordsTried: WordTried[];
+  currentRow: number;
+  isGameOver: boolean;
+}
+
 function WordleGameBoard() {
   const [showHowToPlay, setShowHowToPlay] = useState(true);
   const [gameSessionId, setGameSessionId] = useState("");
-  const [wordsTried, setWordsTried] = useState<string[]>(Array(6).fill(""));
+  const [wordsTried, setWordsTried] = useState<
+    {
+      word: string;
+      wordStatus: string[];
+    }[]
+  >(Array(6).fill({ word: "", wordStatus: [] }));
   const [currentWord, setCurrentWord] = useState<string[]>([]);
   const [currentRow, setCurrentRow] = useState(0);
-  const [secretWord, setSecretWord] = useState("");
+  const [isGameOver, setIsGameOver] = useState(false);
   const [letterStatus, setLetterStatus] = useState<{
     [key: string]: "correct" | "present" | "absent";
   }>({});
-  const [isGameOver, setIsGameOver] = useState(false);
 
   const navigate = useNavigate();
 
@@ -28,82 +44,70 @@ function WordleGameBoard() {
 
   useEffect(() => {
     const getGameSession = async () => {
-      const gameSession = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/game-session`
-      );
+      try {
+        const gameSession = await fetch(`${apiUrl}/api/game-session`);
 
-      if (!gameSession) {
-        const newGameSession = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/new-game-session`
-        );
-        const newGameSessionData = await newGameSession.json();
-        setGameSessionId(newGameSessionData.id);
-        setSecretWord(newGameSessionData.secretWord);
-        setWordsTried(newGameSessionData.wordsTried);
-        setCurrentRow(newGameSessionData.currentRow);
-        setIsGameOver(newGameSessionData.isGameOver);
-      }
+        if (!gameSession.ok) {
+          const newGameSession = await fetch(`${apiUrl}/api/new-game-session`);
+          const newGameSessionData = await newGameSession.json();
+          setGameSessionId(newGameSessionData.id);
+          setWordsTried(newGameSessionData.wordsTried);
+          setCurrentRow(newGameSessionData.currentRow);
+          setIsGameOver(newGameSessionData.isGameOver);
+          return;
+        }
 
-      const gameSessionData = await gameSession.json();
+        const gameSessionData = await gameSession.json();
 
-      setGameSessionId(gameSessionData.id);
-      setSecretWord(gameSessionData.secretWord);
-      setWordsTried(gameSessionData.wordsTried);
-      setCurrentRow(gameSessionData.currentRow);
-      setIsGameOver(gameSessionData.isGameOver);
+        setGameSessionId(gameSessionData.id);
+        setWordsTried(gameSessionData.wordsTried);
+        setCurrentRow(gameSessionData.currentRow);
+        setIsGameOver(gameSessionData.isGameOver);
 
-      // Update keyboard letter status based on words tried
-      const newLetterStatus: {
-        [key: string]: "correct" | "present" | "absent";
-      } = {};
+        // Initialize keyboard letter status based on words tried
+        const newLetterStatus: {
+          [key: string]: "correct" | "present" | "absent";
+        } = {};
 
-      // Process each word that has been tried
-      gameSessionData.wordsTried.forEach((word: string, rowIndex: number) => {
-        if (word && rowIndex < gameSessionData.currentRow) {
-          for (let i = 0; i < word.length; i++) {
-            const letter = word[i].toUpperCase();
-            const status = getLetterStatusForKeyboard(
-              letter,
-              i,
-              gameSessionData.secretWord
-            );
-
-            // Only update if the new status is better than existing
+        // Process each word that has been tried
+        gameSessionData.wordsTried.forEach(
+          (wordData: { word: string; wordStatus: string[] }) => {
             if (
-              !newLetterStatus[letter] ||
-              (newLetterStatus[letter] === "absent" && status !== "absent") ||
-              (newLetterStatus[letter] === "present" && status === "correct")
+              wordData.word &&
+              wordData.wordStatus &&
+              wordData.wordStatus.length > 0
             ) {
-              newLetterStatus[letter] = status;
+              for (let i = 0; i < wordData.word.length; i++) {
+                const letter = wordData.word[i].toUpperCase();
+                const status = wordData.wordStatus[i] as
+                  | "correct"
+                  | "present"
+                  | "absent";
+
+                // Only update if the new status is better than existing
+                if (
+                  !newLetterStatus[letter] ||
+                  (newLetterStatus[letter] === "absent" &&
+                    status !== "absent") ||
+                  (newLetterStatus[letter] === "present" &&
+                    status === "correct")
+                ) {
+                  newLetterStatus[letter] = status;
+                }
+              }
             }
           }
-        }
-      });
+        );
 
-      setLetterStatus(newLetterStatus);
+        setLetterStatus(newLetterStatus);
+      } catch (error) {
+        console.error("Error fetching game session:", error);
+        toast.error("Failed to load game session");
+      }
     };
 
     getGameSession();
   }, []);
-
-  // Helper function to determine letter status for keyboard
-  const getLetterStatusForKeyboard = (
-    letter: string,
-    position: number,
-    secret: string
-  ) => {
-    if (!letter) return "absent";
-
-    if (secret[position] === letter) {
-      return "correct";
-    }
-
-    if (secret.includes(letter)) {
-      return "present";
-    }
-
-    return "absent";
-  };
 
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
@@ -145,125 +149,110 @@ function WordleGameBoard() {
     }
   };
 
-  // Helper function to check if the word is the secret word
-  const checkIfSecretWord = (word: string) => {
-    return word === secretWord;
-  };
-
-  // Helper function to determine letter status
-  const getLetterStatus = (letter: string, position: number) => {
-    if (!letter) return "absent";
-
-    // If the letter is in the correct position
-    if (secretWord[position] === letter) {
-      return "correct";
+  const isSecretWord = async (word: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${apiUrl}/api/is-secret-word`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ word }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking if word is secret:", error);
+      toast.error("Failed to check word");
+      return false;
     }
-
-    // If the letter exists in the word but in wrong position
-    if (secretWord.includes(letter)) {
-      return "present";
-    }
-
-    return "absent";
-  };
-
-  // Update tiles color for the current word
-  const updateLetterStatus = () => {
-    const newLetterStatus = { ...letterStatus };
-    currentWord.forEach((letter, index) => {
-      const status = getLetterStatus(letter, index);
-      if (
-        !letterStatus[letter] ||
-        (letterStatus[letter] === "absent" && status !== "absent") ||
-        (letterStatus[letter] === "present" && status === "correct")
-      ) {
-        newLetterStatus[letter] = status;
-      }
-    });
-
-    setLetterStatus(newLetterStatus);
-    setCurrentRow(currentRow + 1);
-    setCurrentWord([]);
   };
 
   const isValidWord = async (word: string): Promise<boolean> => {
-    const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) {
       console.error("Error: VITE_API_URL environment variable not set.");
       toast.error("API URL not configured. Please contact support.");
-      return false; // Indicate failure
+      return false;
     }
-    const response = await fetch(`${apiUrl}/api/guess`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ word }),
-    });
-    const data = await response.json();
-    return data.isValid;
-  };
 
-  interface GameSession {
-    id: string;
-    secretWord: string;
-    wordsTried: string[];
-    currentRow: number;
-    isGameOver: boolean;
-  }
+    try {
+      const response = await fetch(`${apiUrl}/api/is-valid-word`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ word }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Error validating word:", error);
+      toast.error("Failed to validate word");
+      return false;
+    }
+  };
 
   const updateGameSession = async (newGameSession: GameSession) => {
     if (!apiUrl) {
       console.error("Error: VITE_API_URL environment variable not set.");
       toast.error("API URL not configured. Cannot save game.");
-      // Decide how to handle this - maybe prevent further gameplay?
-      return;
+      return null;
     }
-    await fetch(`${apiUrl}/api/game-session`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ newGameSession }),
-    });
+
+    try {
+      const response = await fetch(`${apiUrl}/api/game-session`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newGameSession),
+      });
+
+      // Get the updated game session with wordStatus filled by backend
+      return await response.json();
+    } catch (error) {
+      console.error("Error updating game session:", error);
+      toast.error("Failed to update game");
+      return null;
+    }
   };
 
   const handleGameEnd = async (wordToCheck: string) => {
     // Update the words tried array first to ensure the word appears on the board
     const newWordsTried = [...wordsTried];
-    newWordsTried[currentRow] = wordToCheck;
+    newWordsTried[currentRow] = { word: wordToCheck, wordStatus: [] };
     setWordsTried(newWordsTried);
 
-    await setIsGameOver(true);
+    setIsGameOver(true);
 
     // Update game session with the updated state
     const currentGameSession = {
       id: gameSessionId,
-      secretWord: secretWord,
       wordsTried: newWordsTried,
       currentRow: currentRow + 1,
       isGameOver: true,
     };
 
-    await updateGameSession(currentGameSession);
-    updateLetterStatus();
+    const updatedSession = await updateGameSession(currentGameSession);
+    if (updatedSession) {
+      setWordsTried(updatedSession.wordsTried);
+      setCurrentRow(updatedSession.currentRow);
+      setIsGameOver(updatedSession.isGameOver);
+      setCurrentWord([]);
+      updateLetterStatus(
+        wordToCheck,
+        updatedSession.wordsTried[currentRow]?.wordStatus || []
+      );
+    }
   };
 
   const handleSubmit = async () => {
     const wordToCheck = currentWord.join("");
 
-    if (currentWord.length !== 5) {
-      return;
-    }
-
-    if (isGameOver) {
+    if (currentWord.length !== 5 || isGameOver) {
       return;
     }
 
     // Check if the word is correct
-    if (checkIfSecretWord(wordToCheck)) {
-      handleGameEnd(wordToCheck);
-
+    if (await isSecretWord(wordToCheck)) {
+      await handleGameEnd(wordToCheck);
       toast.success("You win!");
       return;
     }
@@ -271,9 +260,16 @@ function WordleGameBoard() {
     // The user didn't get the secret word
     // If we are on the last row (0 based indexing)
     if (currentRow === 5) {
-      handleGameEnd(wordToCheck);
+      await handleGameEnd(wordToCheck);
 
-      toast.error(`Game Over! Secret Word was ${secretWord}`);
+      try {
+        const secretWord = await fetch(`${apiUrl}/api/secret-word`);
+        const secretWordData = await secretWord.json();
+        toast.error(`Game Over! Secret Word was ${secretWordData.secretWord}`);
+      } catch (error) {
+        console.error("Error fetching secret word:", error);
+        toast.error("Game Over!");
+      }
       return;
     }
 
@@ -286,52 +282,84 @@ function WordleGameBoard() {
 
     // Update the words tried array first to ensure the word appears on the board
     const newWordsTried = [...wordsTried];
-    newWordsTried[currentRow] = wordToCheck;
+    newWordsTried[currentRow] = { word: wordToCheck, wordStatus: [] };
     setWordsTried(newWordsTried);
 
     // Update game session
     const currentGameSession = {
       id: gameSessionId,
-      secretWord: secretWord,
       wordsTried: newWordsTried,
       currentRow: currentRow + 1,
       isGameOver: isGameOver,
     };
 
-    await updateGameSession(currentGameSession);
-
-    updateLetterStatus();
+    const updatedSession = await updateGameSession(currentGameSession);
+    if (updatedSession) {
+      setWordsTried(updatedSession.wordsTried);
+      setCurrentRow(updatedSession.currentRow);
+      setIsGameOver(updatedSession.isGameOver);
+      setCurrentWord([]);
+      updateLetterStatus(
+        wordToCheck,
+        updatedSession.wordsTried[currentRow]?.wordStatus || []
+      );
+    }
   };
 
   const handleClickStartNewGameAndGetNewSecretWord = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/force-new-game`
-    );
-    const data = await res.json();
+    try {
+      const res = await fetch(`${apiUrl}/api/force-new-game`);
+      const data = await res.json();
 
-    setSecretWord(data.secretWord);
-    setWordsTried(data.wordsTried);
-    setCurrentRow(data.currentRow);
-    setIsGameOver(data.isGameOver);
-    setLetterStatus({});
+      setWordsTried(data.wordsTried);
+      setCurrentRow(data.currentRow);
+      setIsGameOver(data.isGameOver);
+      setCurrentWord([]);
+      setLetterStatus({});
+    } catch (error) {
+      console.error("Error starting new game:", error);
+      toast.error("Failed to start new game");
+    }
   };
 
-  const getNumberOfVowel = () => {
-    const vowel = "AEIOU";
-    let count = 0;
-
-    for (let i = 0; i < secretWord.length; i++) {
-      if (vowel.includes(secretWord[i])) {
-        count++;
-      }
+  const getNumberOfVowel = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/vowel-count`);
+      const data = await response.json();
+      return data.count;
+    } catch (error) {
+      console.error("Error getting vowel count:", error);
+      return null;
     }
-
-    return count;
   };
 
   const getHint = async () => {
-    const numberOfVowels = getNumberOfVowel();
-    toast(`There are ${numberOfVowels} vowels in the secret word!`);
+    const numberOfVowels = await getNumberOfVowel();
+    if (numberOfVowels !== null) {
+      toast(`There are ${numberOfVowels} vowels in the secret word!`);
+    } else {
+      toast.error("Couldn't get hint right now");
+    }
+  };
+
+  const updateLetterStatus = (word: string, wordStatus: string[]) => {
+    const newLetterStatus = { ...letterStatus };
+
+    for (let i = 0; i < word.length; i++) {
+      const letter = word[i].toUpperCase();
+      const status = wordStatus[i] as "correct" | "present" | "absent";
+
+      // Only update if the new status is better than existing
+      if (
+        !newLetterStatus[letter] ||
+        (newLetterStatus[letter] === "absent" && status !== "absent") ||
+        (newLetterStatus[letter] === "present" && status === "correct")
+      ) {
+        newLetterStatus[letter] = status;
+      }
+    }
+
+    setLetterStatus(newLetterStatus);
   };
 
   return (
@@ -346,13 +374,13 @@ function WordleGameBoard() {
             <ArrowLeft />
           </button>
         </Link>
-        <div className=" flex gap-2">
+        <div className="flex gap-2">
           <Button
             className="cursor-pointer"
             onClick={getHint}
             variant={"secondary"}
           >
-            getHint
+            Get Hint
           </Button>
           <Button
             className="cursor-pointer"
@@ -360,7 +388,7 @@ function WordleGameBoard() {
             disabled={!isGameOver}
             variant={"secondary"}
           >
-            Reset with new Secret Word
+            New Game
           </Button>
         </div>
       </header>
@@ -371,38 +399,38 @@ function WordleGameBoard() {
           {[...Array(6)].map((_, rowIndex) => (
             <div key={`row-${rowIndex}`} className="grid grid-cols-5 gap-1">
               {[...Array(5)].map((_, colIndex) => {
-                // Check if this row has a word tried
-                const word = wordsTried[rowIndex];
-                let letter = word ? word[colIndex] : "";
+                // Get the word data for this row
+                const wordData = wordsTried[rowIndex];
+                let letter = "";
 
-                // If this is the current row and we're typing, show the current word
-                if (rowIndex === currentRow && colIndex < currentWord.length) {
+                // For completed rows, get letter and status from wordsTried
+                if (wordData && wordData.word && wordData.word[colIndex]) {
+                  letter = wordData.word[colIndex];
+                }
+                // For current row being typed, get letter from currentWord
+                else if (
+                  rowIndex === currentRow &&
+                  colIndex < currentWord.length
+                ) {
                   letter = currentWord[colIndex];
                 }
 
-                // Determine letter status for coloring
-                let letterStatus = "absent";
-                if (rowIndex < currentRow && letter) {
-                  letterStatus = getLetterStatus(letter, colIndex);
-                }
+                // Determine the status for styling
+                const status = wordData?.wordStatus?.[colIndex] || "";
 
                 return (
                   <div
                     key={`cell-${rowIndex}-${colIndex}`}
                     className={cn(
                       "w-14 h-14 md:w-16 md:h-16 border-2 border-gray-600 flex items-center justify-center text-2xl font-bold",
-                      rowIndex < currentRow &&
-                        letter && {
-                          "bg-green-700 border-green-700":
-                            letterStatus === "correct",
-                          "bg-yellow-700 border-yellow-700":
-                            letterStatus === "present",
-                          "bg-gray-700 border-gray-700":
-                            letterStatus === "absent",
-                        }
+                      {
+                        "bg-green-700 border-green-700": status === "correct",
+                        "bg-yellow-700 border-yellow-700": status === "present",
+                        "bg-gray-700 border-gray-700": status === "absent",
+                      }
                     )}
                   >
-                    {letter && letter.toUpperCase()}
+                    {letter.toUpperCase()}
                   </div>
                 );
               })}
